@@ -190,12 +190,22 @@ export default function CompanyNewsDashboard() {
     }
   }, []);
 
-  // ── On page load, always start from login screen ──────────────────────────
-  // Clear any stored session so users must log in fresh each time
+  // ── On page load, restore session if token exists ──────────────────────────
+  // Check for existing token and restore session to keep user logged in
   useEffect(() => {
     setHasMounted(true);
-    localStorage.removeItem('iz_token');
-  }, []);
+    const storedToken = localStorage.getItem('iz_token');
+    const storedEmail = localStorage.getItem('iz_email');
+    
+    if (storedToken) {
+      setBearerToken(storedToken);
+      if (storedEmail) {
+        setLoggedInEmail(storedEmail);
+      }
+      setScreen('dashboard');
+      loadSubscriptions(storedToken);
+    }
+  }, [loadSubscriptions]);
 
   // ── Fetch news (called on mount and when Apply Filters is clicked) ─────────
   const loadNews = useCallback(async (token: string, companyDomains: string[], triggerCodes: string[]) => {
@@ -321,6 +331,7 @@ export default function CompanyNewsDashboard() {
     try {
       const token = await validateOtp(email.trim(), otp.trim());
       localStorage.setItem('iz_token', token);
+      localStorage.setItem('iz_email', email.trim()); // Persist email for session restore
       setBearerToken(token);
       setLoggedInEmail(email.trim()); // Store logged-in email for display
       setScreen('dashboard');
@@ -348,6 +359,7 @@ export default function CompanyNewsDashboard() {
     try {
       const token = await validateOtp(email.trim(), otp.trim());
       localStorage.setItem('iz_token', token);
+      localStorage.setItem('iz_email', email.trim()); // Persist email for session restore
       setBearerToken(token);
       setLoggedInEmail(email.trim()); // Store logged-in email for display
       setScreen('dashboard');
@@ -370,6 +382,7 @@ export default function CompanyNewsDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('iz_token');
+    localStorage.removeItem('iz_email'); // Clear stored email on logout
     setBearerToken('');
     setSelectedCompanyNames([]); setSelectedTriggerCodes([]);
     setFilterCompanies(EMPTY_COMPANIES); setFilterTriggers(EMPTY_TRIGGERS);
@@ -1211,7 +1224,7 @@ export default function CompanyNewsDashboard() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER: Dashboard
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═════════════���═════════════════════════════════════════════════════════════
 
   const activeFiltersCount = (selectedCompanyNames.length > 0 ? 1 : 0) + (selectedTriggerCodes.length > 0 ? 1 : 0);
 
