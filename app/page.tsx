@@ -134,6 +134,8 @@ export default function CompanyNewsDashboard() {
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
   // "not registered" flag — shown on login page
   const [emailNotRegistered, setEmailNotRegistered] = useState(false);
+  // Store the logged-in user's email to display on dashboard
+  const [loggedInEmail, setLoggedInEmail] = useState('');
 
   // ── Registration form ─────────────────────────────────────────────────────
   const [regName, setRegName] = useState('');
@@ -188,16 +190,12 @@ export default function CompanyNewsDashboard() {
     }
   }, []);
 
-  // ── Restore session on page refresh ──────────────────────────────────────
+  // ── On page load, always start from login screen ──────────────────────────
+  // Clear any stored session so users must log in fresh each time
   useEffect(() => {
     setHasMounted(true);
-    const stored = localStorage.getItem('iz_token');
-    if (stored) { 
-        setBearerToken(stored); 
-        setScreen('dashboard');
-        loadSubscriptions(stored);
-    }
-  }, [loadSubscriptions]);
+    localStorage.removeItem('iz_token');
+  }, []);
 
   // ── Fetch news (called on mount and when Apply Filters is clicked) ─────────
   const loadNews = useCallback(async (token: string, companyDomains: string[], triggerCodes: string[]) => {
@@ -257,6 +255,18 @@ export default function CompanyNewsDashboard() {
     return () => clearTimeout(t);
   }, [otpResendCountdown]);
 
+  // ── Lock background scroll when filter drawer is open ─────────────────────
+  useEffect(() => {
+    if (filterDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [filterDrawerOpen]);
+
 
 
 
@@ -312,6 +322,7 @@ export default function CompanyNewsDashboard() {
       const token = await validateOtp(email.trim(), otp.trim());
       localStorage.setItem('iz_token', token);
       setBearerToken(token);
+      setLoggedInEmail(email.trim()); // Store logged-in email for display
       setScreen('dashboard');
       loadSubscriptions(token);
     } catch (err: any) {
@@ -338,6 +349,7 @@ export default function CompanyNewsDashboard() {
       const token = await validateOtp(email.trim(), otp.trim());
       localStorage.setItem('iz_token', token);
       setBearerToken(token);
+      setLoggedInEmail(email.trim()); // Store logged-in email for display
       setScreen('dashboard');
       loadSubscriptions(token);
     } catch (err: any) {
@@ -363,6 +375,7 @@ export default function CompanyNewsDashboard() {
     setFilterCompanies(EMPTY_COMPANIES); setFilterTriggers(EMPTY_TRIGGERS);
     setArticles([]); setNewsError(''); setSubError('');
     setEmail(''); setOtp(''); setAuthError('');
+    setLoggedInEmail(''); // Clear logged-in email on logout
     setNewsFetched(false);
     setScreen('login-email');
   };
@@ -1048,7 +1061,7 @@ export default function CompanyNewsDashboard() {
               <div className="grid sm:grid-cols-2 gap-8 border-t border-slate-50 pt-8">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">User Account</p>
-                  <p className="text-sm font-bold text-slate-900 truncate">{email}</p>
+                  <p className="text-sm font-bold text-slate-900 truncate">{loggedInEmail}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Status</p>
@@ -1220,7 +1233,7 @@ export default function CompanyNewsDashboard() {
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 rounded-xl hover:bg-blue-100 transition-all active:scale-95">
               <Filter className="w-3.5 h-3.5" /><span className="hidden xs:inline sm:inline">Filters</span>
             </button>
-            {email && <span className="hidden lg:block text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 truncate max-w-[180px]">{email}</span>}
+            {loggedInEmail && <span className="text-[10px] sm:text-xs font-medium text-slate-500 bg-slate-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-100 truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[180px]">{loggedInEmail}</span>}
             <button 
               onClick={() => setScreen('profile')}
               className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 rounded-lg sm:rounded-xl transition-all"
