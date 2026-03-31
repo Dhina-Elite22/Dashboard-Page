@@ -191,11 +191,12 @@ export default function CompanyNewsDashboard() {
   }, []);
 
   // ── On page load, restore session if token exists ──────────────────────────
-  // Check for existing token and restore session to keep user logged in
+  // Using sessionStorage so session is cleared when browser/tab is closed
+  // User will always start from Login page when reopening the website
   useEffect(() => {
     setHasMounted(true);
-    const storedToken = localStorage.getItem('iz_token');
-    const storedEmail = localStorage.getItem('iz_email');
+    const storedToken = sessionStorage.getItem('iz_token');
+    const storedEmail = sessionStorage.getItem('iz_email');
     
     if (storedToken) {
       setBearerToken(storedToken);
